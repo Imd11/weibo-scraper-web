@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 输出文件和缓存
+weibo_output/
+weibo_images/
+*.zip
+*.log
+
+# 测试文件
+test_download.html
+test_web_api.py
+
+# 系统文件
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Vercel
+.vercel/

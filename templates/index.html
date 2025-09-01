@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博内容爬取器 - 专业版</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            min-height: 40px;
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+        }
+
+        .keyword-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .keyword-tag .remove {
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .keyword-tag .remove:hover {
+            opacity: 1;
+        }
+
+        .keyword-input-wrapper {
+            position: relative;
+        }
+
+        .add-keyword-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .add-keyword-btn:hover {
+            background: #5a67d8;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #48bb78;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .feature-desc {
+            color: #718096;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-card {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1><i class="fab fa-weibo"></i> 微博内容爬取器</h1>
+            <p>专业的微博内容采集与分析工具</p>
+        </div>
+
+        <!-- 主要表单 -->
+        <div class="main-card">
+            <form id="scrapeForm">
+                <!-- 用户信息部分 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-user"></i>
+                        目标用户设置
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            微博用户ID 
+                            <i class="fas fa-question-circle tooltip" data-tooltip="从微博用户主页URL中获取，如 weibo.com/u/1234567890 中的 1234567890"></i>
+                        </label>
+                        <input type="text" id="userId" class="form-input" placeholder="例如: 1317335037">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">用户名称</label>
+                        <input type="text" id="userName" class="form-input" placeholder="例如: 姜汝祥">
+                    </div>
+                </div>
+
+                <!-- 时间范围部分 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        时间范围设置
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">开始日期</label>
+                            <input type="date" id="startDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">结束日期</label>
+                            <input type="date" id="endDate" class="form-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 关键词搜索部分 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-search"></i>
+                        关键词筛选 <span style="font-size: 0.8em; color: #718096;">(可选)</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            搜索关键词
+                            <i class="fas fa-question-circle tooltip" data-tooltip="输入关键词后按回车或点击添加按钮，只会采集包含这些关键词的微博"></i>
+                        </label>
+                        <div class="keyword-input-wrapper">
+                            <input type="text" id="keywordInput" class="form-input" placeholder="输入关键词后按回车添加，留空表示采集所有微博">
+                            <button type="button" class="add-keyword-btn" onclick="addKeyword()">添加</button>
+                        </div>
+                    </div>
+                    <div class="keyword-tags" id="keywordTags"></div>
+                </div>
+
+                <!-- 高级设置部分 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-cog"></i>
+                        高级设置
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">最大页数</label>
+                            <input type="number" id="maxPages" class="form-input" min="1" max="20" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">请求间隔(秒)</label>
+                            <input type="number" id="requestDelay" class="form-input" min="1" max="10" value="2">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="fas fa-spinner loading-spinner" id="loadingSpinner"></i>
+                    <i class="fas fa-rocket"></i>
+                    开始爬取微博内容
+                </button>
+            </form>
+
+            <!-- 进度显示 -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progressText">正在初始化...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
+
+            <!-- 错误消息 -->
+            <div class="error-message" id="errorMessage"></div>
+
+
+            <!-- 结果显示 -->
+            <div class="results-section" id="resultsSection">
+                <div class="result-card">
+                    <div class="result-title">
+                        <i class="fas fa-check-circle"></i>
+                        爬取完成！
+                    </div>
+                    <div class="result-stats" id="resultStats">
+                        <!-- 统计数据将通过JavaScript动态插入 -->
+                    </div>
+                    <div class="download-links" id="downloadLinks">
+                        <!-- 下载链接将通过JavaScript动态插入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能特点 -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-expand-alt"></i>
+                </div>
+                <div class="feature-title">全文展开</div>
+                <div class="feature-desc">自动识别并展开"...全文"链接，获取完整内容</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div class="feature-title">图片下载</div>
+                <div class="feature-desc">自动下载所有微博图片到本地，支持多种格式</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="feature-title">关键词筛选</div>
+                <div class="feature-desc">支持多关键词筛选，精准定位目标内容</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <div class="feature-title">多格式输出</div>
+                <div class="feature-desc">支持Markdown和HTML格式，便于阅读和分享</div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>&copy; 2025 微博内容爬取器 - 专业版 | 仅供学习研究使用</p>
+        </div>
+    </div>
+
+    <script>
+        let keywords = [];
+
+        // 添加关键词
+        function addKeyword() {
+            const input = document.getElementById('keywordInput');
+            const keyword = input.value.trim();
+            
+            if (keyword && !keywords.includes(keyword)) {
+                keywords.push(keyword);
+                updateKeywordTags();
+                input.value = '';
+            }
+        }
+
+        // 移除关键词
+        function removeKeyword(index) {
+            keywords.splice(index, 1);
+            updateKeywordTags();
+        }
+
+        // 更新关键词标签显示
+        function updateKeywordTags() {
+            const container = document.getElementById('keywordTags');
+            container.innerHTML = '';
+            
+            keywords.forEach((keyword, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'keyword-tag';
+                tag.innerHTML = `
+                    ${keyword}
+                    <span class="remove" onclick="removeKeyword(${index})">
+                        <i class="fas fa-times"></i>
+                    </span>
+                `;
+                container.appendChild(tag);
+            });
+
+            // 如果没有关键词，显示提示
+            if (keywords.length === 0) {
+                container.innerHTML = '<div style="color: #a0aec0; font-style: italic; padding: 8px;">暂无筛选关键词，将采集所有微博</div>';
+            }
+        }
+
+        // 关键词输入框回车事件
+        document.getElementById('keywordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addKeyword();
+            }
+        });
+
+        // 表单提交
+        document.getElementById('scrapeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const progressSection = document.getElementById('progressSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // 重置显示状态
+            resultsSection.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // 显示加载状态
+            submitBtn.disabled = true;
+            loadingSpinner.style.display = 'inline-block';
+            progressSection.style.display = 'block';
+
+            // 收集表单数据
+            const formData = {
+                userId: document.getElementById('userId').value,
+                userName: document.getElementById('userName').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                keywords: keywords,
+                maxPages: parseInt(document.getElementById('maxPages').value),
+                requestDelay: parseInt(document.getElementById('requestDelay').value)
+            };
+
+            try {
+                // 发送请求到后端启动任务
+                const response = await fetch('/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.task_id) {
+                        // 开始轮询任务状态
+                        await pollTaskProgress(result.task_id);
+                    } else {
+                        throw new Error(result.error || '启动任务失败');
+                    }
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '请求失败');
+                }
+            } catch (error) {
+                showError('爬取失败: ' + error.message);
+                // 恢复按钮状态
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                progressSection.style.display = 'none';
+            }
+        });
+
+        // 轮询任务进度
+        async function pollTaskProgress(taskId) {
+            const maxPolls = 300; // 最大轮询次数 (5分钟)
+            let pollCount = 0;
+
+            while (pollCount < maxPolls) {
+                try {
+                    const response = await fetch(`/progress/${taskId}`);
+                    if (response.ok) {
+                        const status = await response.json();
+                        
+                        // 更新进度显示
+                        updateProgress(status.progress, status.status);
+                        
+                        if (status.completed) {
+                            console.log('Task completed with status:', status);
+                            if (status.result) {
+                                // 任务成功完成
+                                console.log('Calling showResults with:', status.result);
+                                showResults(status.result);
+                            } else if (status.error) {
+                                // 任务失败
+                                console.error('Task failed with error:', status.error);
+                                throw new Error(status.error);
+                            } else {
+                                console.warn('Task completed but no result or error found:', status);
+                                showError('任务完成但未返回结果，请重试');
+                            }
+                            break;
+                        }
+                    } else {
+                        throw new Error('获取进度失败');
+                    }
+                } catch (error) {
+                    showError('获取进度失败: ' + error.message);
+                    break;
+                }
+                
+                // 等待2秒后继续轮询
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                pollCount++;
+            }
+
+            // 恢复按钮状态
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            submitBtn.disabled = false;
+            loadingSpinner.style.display = 'none';
+        }
+
+        // 显示结果
+        function showResults(result) {
+            console.log('showResults called with:', result);
+            
+            try {
+                const resultsSection = document.getElementById('resultsSection');
+                const resultStats = document.getElementById('resultStats');
+                const downloadLinks = document.getElementById('downloadLinks');
+                
+                if (!resultsSection || !resultStats || !downloadLinks) {
+                    console.error('Required elements not found');
+                    return;
+                }
+
+            // 显示统计数据
+            resultStats.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${result.weibo_count}</div>
+                    <div class="stat-label">微博数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${result.image_count}</div>
+                    <div class="stat-label">图片数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${result.keyword_matches || 0}</div>
+                    <div class="stat-label">关键词匹配</div>
+                </div>
+            `;
+
+            // 显示下载链接
+            const downloadUrl = `/download/${result.complete_package}`;
+            console.log('Download URL:', downloadUrl);
+            downloadLinks.innerHTML = `
+                <a href="${downloadUrl}" class="download-btn" download>
+                    <i class="fas fa-download"></i>
+                    下载完整包 (包含报告和图片)
+                </a>
+            `;
+
+            console.log('Showing results section');
+            resultsSection.style.display = 'block';
+            console.log('Results section should now be visible');
+            
+            } catch (error) {
+                console.error('Error in showResults:', error);
+                showError('显示结果时发生错误: ' + error.message);
+            }
+        }
+
+        // 显示错误
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // 初始化关键词标签
+        updateKeywordTags();
+
+
+        // 模拟进度更新（实际项目中应该通过WebSocket或轮询获取真实进度）
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+    </script>
+</body>
+</html>
