@@ -15,10 +15,16 @@ weibo_output/
 weibo_images/
 *.zip
 *.log
+*.jpg
+*.jpeg
+*.png
+*.gif
 
 # 测试文件
 test_download.html
 test_web_api.py
+demo.html
+static/test_result.html
 
 # 系统文件
 .DS_Store
@@ -28,3 +34,4 @@ test_web_api.py
 
 # Vercel
 .vercel/
+.vercel
